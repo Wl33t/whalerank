@@ -16,8 +16,9 @@ else:
     
 fetchaddress(STAKING_CONTRACT, onlyfirst=True)
 txs = runsql(f"SELECT * FROM `tx` WHERE `to` = '{STAKING_CONTRACT}' and (data like '0x0efe6a8b%%' or data like '0xb5c5f672%%') and txreceipt_status=1 order by block desc")
+print("txs:", len(txs))
 res = []
-sql = "replace into alpacastaking(`blockid`,tx10,user,pid,amount) values "
+sql = sqlprefix = "replace into alpacastaking(`blockid`,tx10,user,pid,amount) values "
 for hash,ts,blockid,user,to,nonce,data,_,gaslimit,gasused,gasprice in txs:
     tx10 = hash[2:12]
     #print(data)
@@ -29,4 +30,10 @@ for hash,ts,blockid,user,to,nonce,data,_,gaslimit,gasused,gasprice in txs:
     item= [blockid, tx10, user, pid, amount]
     res.extend(item)
     sql += "(" + ("%s,"*len(item))[:-1] + "),"
-runsql(sql, res)
+    if len(res)>1000:
+        runsql(sql, res)
+        sql = sqlprefix
+        res = []
+if res:
+    runsql(sql, res)
+print("done")
