@@ -59,6 +59,10 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
         traceback.print_exc()
         ib_price = 1
     data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
+    addrs = [i[0] for i in data]
+    nonces = batch_getTransactionCount(addrs)
+    for idx,i in enumerate(data):
+        data[idx] = [*i, nonces[idx]]
     t = globals()
     t.update(locals())
     return render_template("rabbit.html", **t)

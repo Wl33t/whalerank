@@ -11,9 +11,9 @@ function togglerealvalue(){
 }
 </script>
 <table>
-<tr><td>Address</td><td><a onclick="togglerealvalue()"> Current Value</a></td><td>Links</td></tr>
-{% for addr, amount in data%}
-<tr><td>{{addr}}</td><td>$ <span class="amount" humanvalue="{{millify(amount*ib_price)}}" realvalue="{{'%.2f'%(amount*ib_price)}}">{{millify(amount*ib_price)}}</span></td><td>
+<tr><td>Address</td><td><a onclick="togglerealvalue()"> Current Value</a></td><td>Nonce</td><td>Links</td></tr>
+{% for addr, amount, nonce in data%}
+<tr><td>{{addr}}</td><td>$ <span class="amount" humanvalue="{{millify(amount*ib_price)}}" realvalue="{{'%.2f'%(amount*ib_price)}}">{{millify(amount*ib_price)}}</span></td><td>{{nonce}}</td><td>
 <a href="https://bscscan.com/address/{{addr}}" target=_blank>Bscscan</a> 
 <a href="https://debank.com/portfolio/{{addr}}" target=_blank>Debank</a>
 </td></tr>
