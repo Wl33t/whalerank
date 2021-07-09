@@ -1,0 +1,20 @@
+<meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0  minimal-ui">
+<pre>
+Last Update: {{last_update|safe}}
+</pre>
+<script>
+function togglerealvalue(){
+    document.querySelectorAll(".amount").forEach(function(x){
+        x.innerText==x.attributes["realvalue"].value?x.innerText=x.attributes["humanvalue"].value:x.innerText=x.attributes["realvalue"].value
+    })
+}
+</script>
+<table>
+<tr><td>Address</td><td><a onclick="togglerealvalue()"> Current Value</a></td><td>Nonce</td><td>Links</td></tr>
+{% for addr, amount, nonce in data%}
+<tr><td>{{addr}}</td><td>$ <span class="amount" humanvalue="{{millify(amount)}}" realvalue="{{'%.2f'%(amount)}}">{{millify(amount)}}</span></td><td>{{nonce}}</td><td>
+<a href="https://bscscan.com/address/{{addr}}" target=_blank>Bscscan</a> 
+<a href="https://debank.com/portfolio/{{addr}}" target=_blank>Debank</a>
+</td></tr>
+{% endfor %}
+</table>

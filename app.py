@@ -39,7 +39,7 @@ def millify(n):
 
     return '{:.1f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
-def view_rabbit(ibtoken, realtoken, pid, tablename):
+def table2last_update(tablename):
     lastblock = runsql(f"SELECT max(blockid) FROM `{tablename}`")[0][0]
     try:
         block = eth_getBlockByNumber(lastblock)
@@ -50,6 +50,10 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
     except:
         traceback.print_exc()
         last_update = f"Block {lastblock}"
+    return last_update
+
+def view_rabbit(ibtoken, realtoken, pid, tablename):
+    last_update = table2last_update(tablename)
     try:
         if tablename=="rabbitstaking":
             ib_price = rabbit_getprice(ibtoken, realtoken)
@@ -67,6 +71,17 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
     t.update(locals())
     return render_template("rabbit.html", **t)
 
+def view_momo(pid, tablename):
+    last_update = table2last_update(tablename)
+    data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
+    addrs = [i[0] for i in data]
+    nonces = batch_getTransactionCount(addrs)
+    for idx,i in enumerate(data):
+        data[idx] = [*i, nonces[idx]]
+    t = globals()
+    t.update(locals())
+    return render_template("momo.html", **t)
+
 @app.route("/rabbit/busd")
 def view_rabbit_busd():
     return view_rabbit(rabbit_ibBUSD, BUSD, 1, tablename="rabbitstaking")
@@ -82,6 +97,14 @@ def view_alpaca_busd():
 @app.route("/alpaca/usdt")
 def view_alpaca_usdt():
     return view_rabbit(alpaca_ibUSDT, USDT, 16, tablename="alpacastaking")
+
+@app.route("/momo/busd")
+def view_momo_busd():
+    return view_momo(8,"momo")
+
+@app.route("/momo/usdt")
+def view_momo_usdt():
+    return view_momo(9,"momo")
 
 if __name__ == "__main__":
     app.run(debug=os.environ.get("DEBUG", False), host="0.0.0.0", port=5001)
