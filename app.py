@@ -98,12 +98,12 @@ def view_alpaca_busd():
 def view_alpaca_usdt():
     return view_rabbit(alpaca_ibUSDT, USDT, 16, tablename="alpacastaking")
 
-@app.route("/momo/busd")
-def view_momo_busd():
+@app.route("/mobox/busd")
+def view_mobox_busd():
     return view_momo(8,"momo")
 
-@app.route("/momo/usdt")
-def view_momo_usdt():
+@app.route("/mobox/usdt")
+def view_mobox_usdt():
     return view_momo(9,"momo")
 
 if __name__ == "__main__":
