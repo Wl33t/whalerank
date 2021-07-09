@@ -34,8 +34,12 @@ def view_rabbit(ibtoken, realtoken, pid):
     lastblock = runsql(f"SELECT max(blockid) FROM `rabbitstaking`")[0][0]
     try:
         block = eth_getBlockByNumber(lastblock)
-        last_update = datetime.fromtimestamp(int(block["timestamp"], 16)).strftime("%Y/%m/%d %H:%M:%S")+f" (Block {lastblock})"
+        ts = int(block["timestamp"], 16)
+        timestr = datetime.fromtimestamp(ts).strftime("%Y/%m/%d %H:%M:%S")
+        ago = int(time.time()-ts)
+        last_update = f"<span title='{timestr}'>{ago}s ago</span> (Block {lastblock})"
     except:
+        traceback.print_exc()
         last_update = f"Block {lastblock}"
     try:
         ib_price = rabbit_getprice(ibtoken, realtoken)
