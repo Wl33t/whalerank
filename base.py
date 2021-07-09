@@ -227,6 +227,12 @@ def batch_getTransactionCount(addrs):
     res = batch_callRPC(data)
     return [toi(i["result"]) for i in res]
 
+def D(i, j=None):
+    if j:
+        return Decimal(int(i, j))
+    else:
+        return Decimal(i)
+
 if __name__ == "__main__":
     STAKING_CONTRACT = "0x81c1e8a6f8eb226aa7458744c5e12fc338746571"
     fetchaddress(STAKING_CONTRACT, onlyfirst=False)
