@@ -3,10 +3,13 @@ from flask import *
 globals = gl
 from base import *
 app=Flask("whalerank")
+from flaskext.markdown import Markdown
+Markdown(app)
 
 @app.route("/")
 def view_index():
-    return redirect("https://github.com/zjuchenyuan/whalerank")
+    readme = open("README.md").read().replace("https://whalerank.py3.io/", "/") #replace to relative link for local dev
+    return render_template("index.html", readme=readme)
 
 BANK="0xc18907269640d11e2a91d7204f33c5115ce3419e"
 def rabbit_getprice(ibtoken, realtoken):
