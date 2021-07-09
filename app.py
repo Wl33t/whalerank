@@ -58,7 +58,7 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
     except:
         traceback.print_exc()
         ib_price = 1
-    data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `rabbitstaking` where pid={pid} group by user order by a desc limit 100;")
+    data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
     t = globals()
     t.update(locals())
     return render_template("rabbit.html", **t)
