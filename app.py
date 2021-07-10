@@ -71,13 +71,13 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
     t.update(locals())
     return render_template("rabbit.html", **t)
 
-def view_momo(pid, tablename):
+def view_momo(pid, tablename="momo", tokenprice=1):
     last_update = table2last_update(tablename)
     data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
     addrs = [i[0] for i in data]
     nonces = batch_getTransactionCount(addrs)
     for idx,i in enumerate(data):
-        data[idx] = [*i, nonces[idx]]
+        data[idx] = [i[0], i[1]*tokenprice, nonces[idx]]
     t = globals()
     t.update(locals())
     return render_template("momo.html", **t)
@@ -98,13 +98,57 @@ def view_alpaca_busd():
 def view_alpaca_usdt():
     return view_rabbit(alpaca_ibUSDT, USDT, 16, tablename="alpacastaking")
 
+mobox_pools={
+ 1: ('BTCB-WBNB', '0x7561eee90e24f3b348e1087a005f78b4c8453524'),
+ 2: ('ETH-WBNB', '0x70d8929d04b60af4fb9b58713ebcf18765ade422'),
+ 3: ('WBNB-BUSD', '0x1b96b92314c44b159149f7e0303511fb2fc4774f'),
+ 4: ('USDT-WBNB', '0x20bcc3b8a0091ddac2d0bc30f68e6cbb97de59cd'),
+ 5: ('USDT-BUSD', '0xc15fa3e22c912a276550f3e5fe3b0deb87b55acd'),
+ 6: ('DAI-BUSD', '0x3ab77e40340ab084c3e23be8e5a6f7afed9d41dc'),
+ 7: ('USDC-BUSD', '0x680dd100e4b394bda26a59dd5c119a391e747d18'),
+ 8: ('BUSD', '0xe9e7cea3dedca5984780bafc599bd69add087d56'),
+ 9: ('USDT', '0x55d398326f99059ff775485246999027b3197955'),
+ 10: ('USDC', '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'),
+ 12: ('MBOX-WBNB', '0x8d42ee6f423a5016792e6d0d4508c05f30cac5bc'),
+ 14: ('BTCB-WBNB', '0x61eb789d75a95caa3ff50ed7e47b96c132fec082'),
+ 15: ('ETH-WBNB', '0x74e4716e431f45807dcf19f284c7aa99f18a4fbc'),
+ 16: ('WBNB-BUSD', '0x58f876857a02d6762e0101bb5c46a8c1ed44dc16'),
+ 17: ('USDT-WBNB', '0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae'),
+ 18: ('USDT-BUSD', '0x7efaef62fddcca950418312c6c91aef321375a00'),
+ 19: ('DAI-BUSD', '0x66fdb2eccfb58cf098eaa419e5efde841368e489'),
+ 20: ('USDC-BUSD', '0x2354ef4df11afacb85a5c7f98b624072eccddbb1'),
+ 21: ('MBOX-WBNB', '0x8fa59693458289914db0097f5f366d771b7a7c3f')
+}
+
 @app.route("/mobox/busd")
 def view_mobox_busd():
-    return view_momo(8,"momo")
+    return view_momo(8)
 
 @app.route("/mobox/usdt")
 def view_mobox_usdt():
-    return view_momo(9,"momo")
+    return view_momo(9)
+
+@app.route("/mobox/usdc")
+def view_mobox_usdc():
+    return view_momo(10)
+
+@app.route("/mobox/usdt-busd")
+def view_mobox_usdtbusd(id=18):
+    lpprice = lppool_value(B, mobox_pools[id][1], 10**18, token1_nodecimal_price=D(1)/10**18)
+    print("lpprice:", lpprice)
+    return view_momo(id, tokenprice=lpprice)
+
+@app.route("/mobox/dai-busd")
+def view_mobox_daibusd():
+    return view_mobox_usdtbusd(id=19)
+
+@app.route("/mobox/usdc-busd")
+def view_mobox_usdcbusd():
+    return view_mobox_usdtbusd(id=20)
+
+@app.route("/mobox/usdt-busd_old")
+def view_mobox_usdtbusd_old():
+    return view_mobox_usdtbusd(id=5)
 
 if __name__ == "__main__":
     app.run(debug=os.environ.get("DEBUG", False), host="0.0.0.0", port=5001)

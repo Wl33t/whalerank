@@ -1,4 +1,7 @@
 # whalerank
+
+[GitHub](https://github.com/zjuchenyuan/whalerank)
+
 Ranking the whales in staking pools.
 
 Currently, only support USD pools.
@@ -19,3 +22,7 @@ Currently, only support USD pools.
 
 - [Mobox BUSD](https://whalerank.py3.io/mobox/busd)
 - [Mobox USDT](https://whalerank.py3.io/mobox/usdt)
+- [Mobox USDC](https://whalerank.py3.io/mobox/usdc)
+- [Mobox USDT-BUSD](https://whalerank.py3.io/mobox/usdt-busd)
+- [Mobox DAI-BUSD](https://whalerank.py3.io/mobox/dai-busd)
+- [Mobox USDC-BUSD](https://whalerank.py3.io/mobox/usdc-busd)

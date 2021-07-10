@@ -25,18 +25,24 @@ def search_id2tokenname(id):
     if name=="Cake-LP":
         symbol0, symbol1 = lpaddress2symbols(lp)
         name = symbol0+"-"+symbol1
-    return name
+    return name, lp
 
 def search_iter():
-    res = []
+    res = {}
+    failcnt = 0
     for i in range(100):
-        name = search_id2tokenname(i)
-        if not name:
-            if i==0:
+        r = search_id2tokenname(i)
+        if not r:
+            failcnt += 1
+            if failcnt>3:#we stop when we fail three times in a row
+                break
+            else:
                 continue
-            break
-        res.append(name)
-    return name
+        failcnt=0
+        name,addr = r
+        res[i]=(name, addr)
+        print(i, name, addr)
+    return res
 
 def update_momo(STAKING_CONTRACT=STAKING_CONTRACT, deposit_PREFIX=deposit_PREFIX, withdraw_PREFIX=withdraw_PREFIX, pid_from_data=pid_from_data, amount_from_data=amount_from_data):
     fetchaddress(STAKING_CONTRACT, onlyfirst=True)

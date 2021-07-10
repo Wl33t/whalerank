@@ -240,3 +240,19 @@ def D(i, j=None):
     else:
         return Decimal(i)
 
+def lppool_value_pure(lpinfo, lptotal, myamount_nodecimal, token1_nodecimal_price=None, token2_nodecimal_price=None):
+    if token1_nodecimal_price:
+        pool_total_value = Decimal(int(lpinfo[:64],16)) * token1_nodecimal_price * 2
+    else:
+        assert token2_nodecimal_price, "should provide at least one price, example: token2_nodecimal_price=Decimal(1)/10**18"
+        pool_total_value = Decimal(int(lpinfo[64:64*2],16)) * token2_nodecimal_price * 2
+    myvalue = myamount_nodecimal/lptotal * pool_total_value
+    return myvalue
+
+def lppool_value(ENDPOINT, lpcontract, myamount_nodecimal, token1_nodecimal_price=None, token2_nodecimal_price=None):
+    (_, lpinfo), (_,lptotal) = batch_callfunction(ENDPOINT, [[lpcontract, "getReserves()", ""], [lpcontract, "totalSupply()", ""]], "latest")
+    lpinfo = lpinfo[2:]
+    lptotal = D(lptotal, 16)
+    #lpinfo = callfunction(ENDPOINT, lpcontract, "getReserves()", "", "latest", False)[2:]
+    #lptotal = Decimal(callfunction(ENDPOINT, lpcontract, "totalSupply()", "", "latest"))
+    return lppool_value_pure(lpinfo, lptotal, myamount_nodecimal, token1_nodecimal_price=token1_nodecimal_price, token2_nodecimal_price=token2_nodecimal_price)
