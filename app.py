@@ -39,10 +39,10 @@ def millify(n):
 
     return '{:.1f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
-def table2last_update(tablename):
+def table2last_update(tablename, endpoint=None):
     lastblock = runsql(f"SELECT max(blockid) FROM `{tablename}`")[0][0]
     try:
-        block = eth_getBlockByNumber(lastblock)
+        block = eth_getBlockByNumber(lastblock, endpoint=endpoint)
         ts = int(block["timestamp"], 16)
         timestr = datetime.fromtimestamp(ts).strftime("%Y/%m/%d %H:%M:%S")
         ago = int(time.time()-ts)
@@ -71,16 +71,16 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
     t.update(locals())
     return render_template("rabbit.html", **t)
 
-def view_momo(pid, tablename="momo", tokenprice=1):
-    last_update = table2last_update(tablename)
+def view_momo(pid, tablename="momo", tokenprice=1, endpoint=B, template="momo.html"):
+    last_update = table2last_update(tablename, endpoint=endpoint)
     data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
     addrs = [i[0] for i in data]
-    nonces = batch_getTransactionCount(addrs)
+    nonces = batch_getTransactionCount(addrs, endpoint=endpoint)
     for idx,i in enumerate(data):
         data[idx] = [i[0], i[1]*tokenprice, nonces[idx]]
     t = globals()
     t.update(locals())
-    return render_template("momo.html", **t)
+    return render_template(template, **t)
 
 @app.route("/rabbit/busd")
 def view_rabbit_busd():
@@ -149,6 +149,13 @@ def view_mobox_usdcbusd():
 @app.route("/mobox/usdt-busd_old")
 def view_mobox_usdtbusd_old():
     return view_mobox_usdtbusd(id=5)
+
+M = "https://matic.mytokenpocket.vip/"
+
+@app.route("/maticiron/3usd")
+def view_maticiron_3usd():
+    token_price = D(callfunction(M, "0x837503e8a8753ae17fb8c8151b8e6f586defcb57", "calculateRemoveLiquidityOneToken(address,uint256,uint8)", addrtoarg("0x0000000000000000000000000000000000000000")+hex(10**(18+3))[2:].rjust(64,"0")+"0"*64,))/10**(6+3)
+    return view_momo(0, tablename="maticiron", tokenprice=token_price, endpoint=M, template="maticiron.html")
 
 if __name__ == "__main__":
     app.run(debug=os.environ.get("DEBUG", False), host="0.0.0.0", port=5001)

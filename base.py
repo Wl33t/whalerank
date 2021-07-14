@@ -143,13 +143,18 @@ def cached_scan_txlist(address, page, note="bsc", endpoint="api.bscscan.com"):
     open(cachefile,"w").write(json.dumps(res))
     return res
 
-def eth_getBlockByNumber(height, urls=BSC_NODES, retry=3):
-    url = urls[0]
+def eth_getBlockByNumber(height, urls=BSC_NODES, retry=3, endpoint=None):
+    if endpoint:
+        urls = [endpoint]
+        url = endpoint
+    else:
+        url = urls[0]
     if isinstance(height, int):
         height = hex(height)
     res = {}
     try:
-        x = sess.post(url, data='{"id":%d,"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["%s",true]}'%(random.randint(0,9999),height), timeout=5)
+        x = sess.post(url, json={"id":random.randint(0,9999),"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":[height,True]}, timeout=5)
+        print(url, x, x.text, height)
         res = x.json()["result"]
     except:
         pass
@@ -158,12 +163,12 @@ def eth_getBlockByNumber(height, urls=BSC_NODES, retry=3):
             sleep(2)
             random.shuffle(urls)
             print("change api to", urls[0])
-            return eth_getBlockByNumber(height, urls=urls, retry=retry-1)
+            return eth_getBlockByNumber(height, urls=urls, retry=retry-1, endpoint=endpoint)
         else:
             raise Exception(x.text)
     return res
 
-def batch_eth_getBlockByNumber(heights):
+def batch_eth_getBlockByNumber(heights, endpoint=None):
     data = []
     for height in heights:
         if isinstance(height, int):
@@ -171,7 +176,7 @@ def batch_eth_getBlockByNumber(heights):
         data.append({"id":len(data),"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":[height,True]})
     def f(res):
         assert res and "transactions" in res[0]["result"]
-    res = batch_callRPC(data, checkfunc=f)
+    res = batch_callRPC(data, checkfunc=f, endpoint=endpoint)
     return [i["result"] for i in res]
 
 def createtable_tx(tablename):
@@ -237,8 +242,12 @@ def fetchaddress(addr, oldres=None, toblock=None, onlyfirst=False, endpoint="api
         return fetchaddress(addr, oldres=res, toblock=min([int(i[2]) for i in res])+1, endpoint=endpoint, APIKEY=APIKEY, tablename=tablename)
     return res
 
-def batch_callRPC(data, urls=BSC_NODES, retry=3, checkfunc=None):
-    url = urls[0]
+def batch_callRPC(data, urls=BSC_NODES, retry=3, checkfunc=None, endpoint=None):
+    if endpoint:
+        urls = [endpoint]
+        url = endpoint
+    else:
+        url = urls[0]
     try:
         x = sess.post(url, json=data, timeout=10)
         res = x.json()
@@ -248,23 +257,24 @@ def batch_callRPC(data, urls=BSC_NODES, retry=3, checkfunc=None):
         print(e)
         if retry:
             random.shuffle(urls)
-            return batch_callRPC(data, urls=urls, retry=retry-1, checkfunc=checkfunc)
+            return batch_callRPC(data, urls=urls, retry=retry-1, checkfunc=checkfunc, endpoint=endpoint)
         else:
             raise
     return res
 
-def batch_getTransactionCount(addrs):
+def batch_getTransactionCount(addrs, endpoint=None):
     data=[]
     for addr in addrs:
         data.append({"jsonrpc":"2.0","method":"eth_getTransactionCount","params": [addr,"latest"],"id":len(data)})
-    res = batch_callRPC(data)
+    res = batch_callRPC(data, endpoint=endpoint)
+    #print(res)
     return [toi(i["result"]) for i in res]
 
-def batch_getTransactionReceipt(txs):
+def batch_getTransactionReceipt(txs, endpoint=None):
     data = []
     for tx in txs:
         data.append({"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params": [tx],"id":len(data)})
-    res = batch_callRPC(data)
+    res = batch_callRPC(data, endpoint=endpoint)
     return [i["result"] for i in res]
 
 def D(i, j=None):
