@@ -48,11 +48,12 @@ def search_iter():
 
 def update_momo():
     fetchaddress(STAKING_CONTRACT, onlyfirst=True)
-    update_generic(TABLENAME=TABLENAME, STAKING_CONTRACT=STAKING_CONTRACT, deposit_PREFIX=deposit_PREFIX, withdraw_PREFIX=withdraw_PREFIX, 
+    update_generic(TABLENAME=TABLENAME, STAKING_CONTRACT=STAKING_CONTRACT, deposit_PREFIXs=[deposit_PREFIX], withdraw_PREFIXs=[withdraw_PREFIX], 
         pid_from_data=pid_from_data, amount_from_data=amount_from_data, user_from_data=None, txtable="tx", pid2decimal=None)
 
-def update_generic(TABLENAME, STAKING_CONTRACT, deposit_PREFIX, withdraw_PREFIX, pid_from_data, amount_from_data, user_from_data=None, txtable="tx", pid2decimal=None, force=False):
-    sql = f"SELECT * FROM `{txtable}` WHERE `to` = '{STAKING_CONTRACT}' and (data like '{deposit_PREFIX}%%' or data like '{withdraw_PREFIX}%%') and txreceipt_status=1 order by block desc"
+def update_generic(TABLENAME, STAKING_CONTRACT, deposit_PREFIXs, withdraw_PREFIXs, pid_from_data, amount_from_data, user_from_data=None, txtable="tx", pid2decimal=None, force=False):
+    orlike = " or ".join([f"data like '{i}%%'" for i in deposit_PREFIXs+withdraw_PREFIXs])
+    sql = f"SELECT * FROM `{txtable}` WHERE `to` = '{STAKING_CONTRACT}' and ({orlike}) and txreceipt_status=1 order by block desc"
     try:
         if not force:
             startblockid = int(runsql(f"select max(blockid) from {TABLENAME}")[0][0])
@@ -68,7 +69,7 @@ def update_generic(TABLENAME, STAKING_CONTRACT, deposit_PREFIX, withdraw_PREFIX,
         #print(data)
         pid = pid_from_data(data)
         amount = amount_from_data(data)
-        if data.startswith(withdraw_PREFIX):
+        if any([data.startswith(i) for i in withdraw_PREFIXs]):
             amount = -amount
         if pid2decimal: #how many decimals should we drop? 
             dropdecimal = pid2decimal(pid)
