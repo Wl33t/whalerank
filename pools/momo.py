@@ -46,12 +46,17 @@ def search_iter():
         print(i, name, addr)
     return res
 
-def update_momo(STAKING_CONTRACT=STAKING_CONTRACT, deposit_PREFIX=deposit_PREFIX, withdraw_PREFIX=withdraw_PREFIX, pid_from_data=pid_from_data, amount_from_data=amount_from_data):
+def update_momo():
     fetchaddress(STAKING_CONTRACT, onlyfirst=True)
-    sql = f"SELECT * FROM `tx` WHERE `to` = '{STAKING_CONTRACT}' and (data like '{deposit_PREFIX}%%' or data like '{withdraw_PREFIX}%%') and txreceipt_status=1 order by block desc"
+    update_generic(TABLENAME=TABLENAME, STAKING_CONTRACT=STAKING_CONTRACT, deposit_PREFIX=deposit_PREFIX, withdraw_PREFIX=withdraw_PREFIX, 
+        pid_from_data=pid_from_data, amount_from_data=amount_from_data, user_from_data=None, txtable="tx", pid2decimal=None)
+
+def update_generic(TABLENAME, STAKING_CONTRACT, deposit_PREFIX, withdraw_PREFIX, pid_from_data, amount_from_data, user_from_data=None, txtable="tx", pid2decimal=None, force=False):
+    sql = f"SELECT * FROM `{txtable}` WHERE `to` = '{STAKING_CONTRACT}' and (data like '{deposit_PREFIX}%%' or data like '{withdraw_PREFIX}%%') and txreceipt_status=1 order by block desc"
     try:
-        startblockid = int(runsql(f"select max(blockid) from {TABLENAME}")[0][0])
-        sql = sql.replace(" order by", f" and block>={startblockid} order by")
+        if not force:
+            startblockid = int(runsql(f"select max(blockid) from {TABLENAME}")[0][0])
+            sql = sql.replace(" order by", f" and block>={startblockid} order by")
     except:
         traceback.print_exc()
     txs = runsql(sql)
@@ -65,7 +70,13 @@ def update_momo(STAKING_CONTRACT=STAKING_CONTRACT, deposit_PREFIX=deposit_PREFIX
         amount = amount_from_data(data)
         if data.startswith(withdraw_PREFIX):
             amount = -amount
-        amount //= 10**(18-6) #TODO: we have no abi for poolInfo, assuming all tokens has 18 decimals
+        if pid2decimal: #how many decimals should we drop? 
+            dropdecimal = pid2decimal(pid)
+        else: # for usd pools, we recommend keep 6 digits, so drop 18-6 decimal
+            dropdecimal = 18-6
+        amount //= 10**dropdecimal
+        if user_from_data:
+            user = user_from_data(data)
         item= [blockid, tx10, user, pid, amount]
         res.extend(item)
         sql += "(" + ("%s,"*len(item))[:-1] + "),"
