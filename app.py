@@ -2,6 +2,7 @@ gl = globals
 from flask import *
 globals = gl
 from base import *
+from functools import lru_cache
 app=Flask("whalerank")
 from flaskext.markdown import Markdown
 Markdown(app)
@@ -39,8 +40,20 @@ def millify(n):
 
     return '{:.1f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
+def cached_runsql(*args, **kwargs):
+    ttl_hash = int(time.time()/60)
+    return real_cached_runsql(ttl_hash, *args, **kwargs)[:]
+
+@lru_cache()
+def real_cached_runsql(ttl_hash, *args, **kwargs):
+    print("[cache miss]", args[0])
+    ts = time.time()
+    res = runsql(*args, **kwargs)
+    print("runsql time:", time.time()-ts)
+    return res
+
 def table2last_update(tablename, endpoint=None):
-    lastblock = runsql(f"SELECT max(blockid) FROM `{tablename}`")[0][0]
+    lastblock = cached_runsql(f"SELECT max(blockid) FROM `{tablename}`")[0][0]
     try:
         block = eth_getBlockByNumber(lastblock, endpoint=endpoint)
         ts = int(block["timestamp"], 16)
@@ -62,7 +75,7 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
     except:
         traceback.print_exc()
         ib_price = 1
-    data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
+    data = cached_runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
     addrs = [i[0] for i in data]
     nonces = batch_getTransactionCount(addrs)
     for idx,i in enumerate(data):
@@ -74,8 +87,7 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
 def view_momo(pid, tablename="momo", tokenprice=1, endpoint=B, template="momo.html"):
     last_update = table2last_update(tablename, endpoint=endpoint)
     ts = time.time()
-    data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
-    print("runsql time:", time.time()-ts)
+    data = cached_runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
     addrs = [i[0] for i in data]
     nonces = batch_getTransactionCount(addrs, endpoint=endpoint)
     for idx,i in enumerate(data):
@@ -160,4 +172,4 @@ def view_maticiron_3usd():
     return view_momo(0, tablename="maticiron", tokenprice=token_price, endpoint=M, template="maticiron.html")
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("DEBUG", False), host="0.0.0.0", port=5001)
+    app.run(debug=os.environ.get("DEBUG", False), host="0.0.0.0", port=5001, threaded=True)
