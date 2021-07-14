@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 from base import *
 
 def update_alpaca_fairlaunch(STAKING_CONTRACT, TABLENAME, updatedecimals=True):

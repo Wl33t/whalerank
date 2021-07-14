@@ -174,18 +174,51 @@ def batch_eth_getBlockByNumber(heights):
     res = batch_callRPC(data, checkfunc=f)
     return [i["result"] for i in res]
 
-def fetchaddress(addr, oldres=None, toblock=None, onlyfirst=False):
+def createtable_tx(tablename):
+    sql = f"""CREATE TABLE if not exists `{tablename}` (
+      `id` char(66) CHARACTER SET ascii NOT NULL,
+      `ts` int(11) DEFAULT NULL,
+      `block` int(11) DEFAULT NULL,
+      `from` char(42) CHARACTER SET ascii DEFAULT NULL,
+      `to` char(42) CHARACTER SET ascii DEFAULT NULL,
+      `nonce` int(11) DEFAULT NULL,
+      `data` varchar(50000) CHARACTER SET ascii DEFAULT NULL,
+      `txreceipt_status` smallint(6) DEFAULT NULL,
+      `gaslimit` int(11) DEFAULT NULL,
+      `gasused` int(11) DEFAULT NULL,
+      `gasprice` bigint(11) DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      KEY `from` (`from`),
+      KEY `to` (`to`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1"""
+    return runsql(sql)
+
+def createtable_pid_project(tablename):
+    sql = f"""CREATE TABLE if not exists `{tablename}` (
+      `blockid` int(11) NOT NULL,
+      `tx10` char(10) NOT NULL,
+      `user` char(42) DEFAULT NULL,
+      `pid` int(11) DEFAULT NULL,
+      `amount` bigint(11) DEFAULT NULL,
+      PRIMARY KEY (`blockid`,`tx10`),
+      KEY `user` (`user`),
+      KEY `pid` (`pid`),
+      KEY `user_2` (`user`,`pid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1"""
+    return runsql(sql)
+
+def fetchaddress(addr, oldres=None, toblock=None, onlyfirst=False, endpoint="api.bscscan.com", APIKEY=BSC_SCANKEY, tablename="tx"):
     page = 1
     res = oldres if oldres else []
     shouldcontinue = True
     while page<=10:
-        d = scan_txlist(addr, page=page, toblock=toblock)
+        d = scan_txlist(addr, page=page, toblock=toblock, endpoint=endpoint, APIKEY=APIKEY)
         minblock = min([int(i["blockNumber"]) for i in d]) if d else -1
         print(f"fetch page{page} len{len(d)} minblock{minblock}")
         if not d:
             shouldcontinue = False
             break
-        sql = "replace into tx(`id`,`ts`,`block`,`from`,`to`,nonce,data,txreceipt_status,gaslimit,gasused,gasprice) values "
+        sql = f"replace into {tablename}(`id`,`ts`,`block`,`from`,`to`,nonce,data,txreceipt_status,gaslimit,gasused,gasprice) values "
         items=[]
         for i in d:
             try:
@@ -201,7 +234,7 @@ def fetchaddress(addr, oldres=None, toblock=None, onlyfirst=False):
         if onlyfirst:
             return res
     if shouldcontinue:
-        return fetchaddress(addr, oldres=res, toblock=min([int(i[2]) for i in res])+1)
+        return fetchaddress(addr, oldres=res, toblock=min([int(i[2]) for i in res])+1, endpoint=endpoint, APIKEY=APIKEY, tablename=tablename)
     return res
 
 def batch_callRPC(data, urls=BSC_NODES, retry=3, checkfunc=None):

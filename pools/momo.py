@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 from base import *
 STAKING_CONTRACT="0xdad49e63f97c967955975490a432de3796c699e6"
 deposit_PREFIX, withdraw_PREFIX="0xe2bbb158", "0x441a3e70"
