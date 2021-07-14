@@ -174,4 +174,4 @@ def view_maticiron_3usd():
     return view_momo(0, tablename="maticiron", tokenprice=token_price, endpoint=M, template="maticiron.html")
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("DEBUG", False), host="0.0.0.0", port=5001, threaded=True)
+    app.run(debug=os.environ.get("DEBUG", False), host="127.0.0.1", port=5001, threaded=True, use_reloader=True)
