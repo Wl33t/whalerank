@@ -4,8 +4,14 @@ globals = gl
 from base import *
 from functools import lru_cache
 app=Flask("whalerank")
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app)
 from flaskext.markdown import Markdown
 Markdown(app)
+
+@app.before_request
+def before_request():
+    print("ip:",request.headers.getlist("X-Forwarded-For"))
 
 @app.route("/")
 def view_index():
