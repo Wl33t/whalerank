@@ -5,7 +5,7 @@ from base import *
 from functools import lru_cache
 app=Flask("whalerank")
 from werkzeug.middleware.proxy_fix import ProxyFix
-app.wsgi_app = ProxyFix(app.wsgi_app)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 from flaskext.markdown import Markdown
 Markdown(app)
 
