@@ -73,7 +73,9 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
 
 def view_momo(pid, tablename="momo", tokenprice=1, endpoint=B, template="momo.html"):
     last_update = table2last_update(tablename, endpoint=endpoint)
+    ts = time.time()
     data = runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
+    print("runsql time:", time.time()-ts)
     addrs = [i[0] for i in data]
     nonces = batch_getTransactionCount(addrs, endpoint=endpoint)
     for idx,i in enumerate(data):

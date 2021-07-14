@@ -154,7 +154,8 @@ def eth_getBlockByNumber(height, urls=BSC_NODES, retry=3, endpoint=None):
     res = {}
     try:
         x = sess.post(url, json={"id":random.randint(0,9999),"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":[height,True]}, timeout=5)
-        print(url, x, x.text, height)
+        if os.environ.get("DEBUG_VERBOSE", False):
+            print(url, x, x.text, height)
         res = x.json()["result"]
     except:
         pass
