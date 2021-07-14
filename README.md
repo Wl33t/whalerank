@@ -6,7 +6,7 @@ Ranking the whales in staking pools.
 
 Currently, only support USD pools.
 
-Example: Currently, the biggest whale in Alpaca BUSD pool deposit 30.9 Million Dollars.
+**Example**: On 2021-07-11, the biggest whale in Alpaca BUSD pool deposit 30.9 Million Dollars.
 
 ![image](https://user-images.githubusercontent.com/17289004/125200284-fe0d6b80-e29c-11eb-998a-e3ae467cc157.png)
 

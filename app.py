@@ -43,15 +43,15 @@ def millify(n):
     return '{:.1f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
 
 def cached_runsql(*args, **kwargs):
-    ttl_hash = int(time.time()/60)
+    ttl_hash = int(time.time()/300)
     return real_cached_runsql(ttl_hash, *args, **kwargs)[:]
 
 @lru_cache()
 def real_cached_runsql(ttl_hash, *args, **kwargs):
-    print("[cache miss]", args[0])
+    #print("[cache miss]", args[0])
     ts = time.time()
     res = runsql(*args, **kwargs)
-    print("runsql time:", time.time()-ts)
+    #print("runsql time:", time.time()-ts)
     return res
 
 def table2last_update(tablename, endpoint=None):
