@@ -3,6 +3,7 @@ from flask import *
 globals = gl
 from base import *
 from functools import lru_cache
+import eth_abi
 app=Flask("whalerank")
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2)
@@ -86,14 +87,28 @@ def view_rabbit(ibtoken, realtoken, pid, tablename):
     t.update(locals())
     return render_template("rabbit.html", **t)
 
+def pendingkey(addresses, endpoint=B):
+    farm="0x529E2a515CE4499C41B23102E56e45025e393757"
+    x = batch_callfunction_decode(endpoint, [ 
+        [farm,"getUserFarmInfos(uint256[],address)",b16encode(eth_abi.encode_abi(["uint256[]","address"], [list(range(0,22)),addr])).decode().lower()] 
+            for addr in addresses], 
+        ['(uint256[],uint256[],uint256[],uint256[],uint256)']
+    )
+    return [Decimal(sum(i[3]))/10**18 for i in x]
+
 def view_momo(pid, tablename="momo", tokenprice=1, endpoint=B, template="momo.html"):
     last_update = table2last_update(tablename, endpoint=endpoint)
     ts = time.time()
     data = cached_runsql(f"SELECT user, sum(amount)/1000000 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
     addrs = [i[0] for i in data]
     nonces = batch_getTransactionCount(addrs, endpoint=endpoint)
+    if template=="momo.html":
+        keys = pendingkey(addrs, endpoint=endpoint)
+        sum_key = "%.1f"%sum(keys)
     for idx,i in enumerate(data):
         data[idx] = [i[0], i[1]*tokenprice, nonces[idx]]
+        if template=="momo.html":
+            data[idx].append("%.1f"%keys[idx])
     t = globals()
     t.update(locals())
     return render_template(template, **t)
@@ -174,4 +189,4 @@ def view_maticiron_3usd():
     return view_momo(0, tablename="maticiron", tokenprice=token_price, endpoint=M, template="maticiron.html")
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("DEBUG", False), host="127.0.0.1", port=5001, threaded=True, use_reloader=True)
+    app.run(debug=os.environ.get("DEBUG", False), host="127.0.0.1", port=5001, threaded=True, use_reloader=False)

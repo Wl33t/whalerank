@@ -2,6 +2,7 @@
 <pre>
 Last Update: {{last_update|safe}}
 Note: interest not considered, value may be inaccurate
+Sum of pending KEY (this page): {{sum_key}}
 </pre>
 <script>
 function togglerealvalue(){
@@ -11,9 +12,9 @@ function togglerealvalue(){
 }
 </script>
 <table>
-<tr><td>Address</td><td><a onclick="togglerealvalue()"> Current Value</a></td><td>Nonce</td><td>Links</td></tr>
-{% for addr, amount, nonce in data%}
-<tr><td>{{addr}}</td><td>$ <span class="amount" humanvalue="{{millify(amount)}}" realvalue="{{'%.2f'%(amount)}}">{{millify(amount)}}</span></td><td>{{nonce}}</td><td>
+<tr><td>Address</td><td><a onclick="togglerealvalue()"> Current Value</a></td><td>Nonce</td><td>Pending KEY</td><td>Links</td></tr>
+{% for addr, amount, nonce, key in data%}
+<tr><td>{{addr}}</td><td>$ <span class="amount" humanvalue="{{millify(amount)}}" realvalue="{{'%.2f'%(amount)}}">{{millify(amount)}}</span></td><td>{{nonce}}</td><td>{{key}}</td><td>
 <a href="https://bscscan.com/address/{{addr}}" target=_blank>Bscscan</a> 
 <a href="https://debank.com/portfolio/{{addr}}" target=_blank>Debank</a>
 </td></tr>
