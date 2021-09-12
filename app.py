@@ -9,6 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2)
 from flaskext.markdown import Markdown
 Markdown(app)
+from config import ARBI
 
 @app.route("/")
 def view_index():
@@ -113,6 +114,24 @@ def view_momo(pid, tablename="momo", tokenprice=1, endpoint=B, template="momo.ht
     t.update(locals())
     return render_template(template, **t)
 
+@app.route("/carbon/eth")
+def view_carbon():
+    pid = 0
+    template = "carbon.html"
+    tablename = "carbon"
+    endpoint = ARBI
+    tokenprice = 1
+    last_update = table2last_update(tablename, endpoint=endpoint)
+    ts = time.time()
+    data = cached_runsql(f"SELECT user, sum(amount)/1e18 as a FROM `{tablename}` where pid={pid} group by user order by a desc limit 100;")
+    addrs = [i[0] for i in data]
+    nonces = batch_getTransactionCount(addrs, endpoint=endpoint)
+    for idx,i in enumerate(data):
+        data[idx] = [i[0], i[1]*tokenprice, nonces[idx]]
+    t = globals()
+    t.update(locals())
+    return render_template(template, **t)
+
 @app.route("/rabbit/busd")
 def view_rabbit_busd():
     return view_rabbit(rabbit_ibBUSD, BUSD, 1, tablename="rabbitstaking")
@@ -189,4 +208,4 @@ def view_maticiron_3usd():
     return view_momo(0, tablename="maticiron", tokenprice=token_price, endpoint=M, template="maticiron.html")
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("DEBUG", False), host="127.0.0.1", port=5001, threaded=True, use_reloader=False)
+    app.run(debug=os.environ.get("DEBUG", False), host="127.0.0.1", port=5001, threaded=True, use_reloader=True)

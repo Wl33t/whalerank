@@ -4,3 +4,4 @@ MYSQL_HOST="127.0.0.1"
 MYSQL_PORT=3306
 MYSQL_DB="whalerank"
 BSC_SCANKEY="YOURKEY" # get from https://bscscan.com/myapikey
+ARBI = "https://arb1.arbitrum.io/rpc"

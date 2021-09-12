@@ -6,7 +6,7 @@ from time import sleep
 from copy import deepcopy
 from collections import Counter
 from runsql import *
-from config import BSC_SCANKEY
+from config import *
 BSC_NODES = ["https://bsc-dataseed.binance.org/", 
 "https://bsc-dataseed1.defibit.io/", 
 "https://bsc-dataseed3.ninicoin.io/",
@@ -20,13 +20,20 @@ sess=requests.session()
 toi = lambda x:int(x,16)
 
 from Crypto.Hash import keccak
+
+def event_hash(s):
+    return keccak.new(digest_bits=256).update(s.encode("utf-8")).hexdigest()
+
 def function_hash(func_str):
-    return keccak.new(digest_bits=256).update(func_str.encode("utf-8")).hexdigest()[:8]
-    
+    return event_hash(func_str)[:8]
+
 def addrtoarg(addr):
+    if isinstance(addr, int):
+        addr = hex(addr)
     if addr.startswith("0x"):
         addr = addr[2:]
     return addr.lower().rjust(64, "0")
+toarg = addrtoarg
 
 def callfunction(endpoint, addr, func_str, args_str, blockid="latest", returnint=True):
     if os.environ.get("DEBUG", False):
@@ -70,7 +77,7 @@ def batch_callfunction(endpoint, datalist, height):
             })
     if os.environ.get("DEBUG_VERBOSE", False):
         print(data)
-    x = sess.post(endpoint, json=data, timeout=5)
+    x = sess.post(endpoint, json=data, timeout=10)
     if os.environ.get("DEBUG_VERBOSE", False):
         print(x.json())
     res = [(i["id"],i.get("result", None)) for i in x.json()]
@@ -213,7 +220,7 @@ def createtable_pid_project(tablename):
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1"""
     return runsql(sql)
 
-def fetchaddress(addr, oldres=None, toblock=None, onlyfirst=False, endpoint="api.bscscan.com", APIKEY=BSC_SCANKEY, tablename="tx"):
+def fetchaddress(addr, oldres=None, toblock=None, onlyfirst=False, endpoint="api.bscscan.com", APIKEY=BSC_SCANKEY, tablename="tx", targetblock=None):
     page = 1
     res = oldres if oldres else []
     shouldcontinue = True
@@ -237,7 +244,7 @@ def fetchaddress(addr, oldres=None, toblock=None, onlyfirst=False, endpoint="api
             items.extend(item)
         runsql(sql[:-1], items)
         page += 1
-        if onlyfirst:
+        if onlyfirst or (targetblock and min([int(i[2]) for i in res])<targetblock ):
             return res
     if shouldcontinue:
         return fetchaddress(addr, oldres=res, toblock=min([int(i[2]) for i in res])+1, endpoint=endpoint, APIKEY=APIKEY, tablename=tablename)
@@ -300,3 +307,16 @@ def lppool_value(ENDPOINT, lpcontract, myamount_nodecimal, token1_nodecimal_pric
     #lpinfo = callfunction(ENDPOINT, lpcontract, "getReserves()", "", "latest", False)[2:]
     #lptotal = Decimal(callfunction(ENDPOINT, lpcontract, "totalSupply()", "", "latest"))
     return lppool_value_pure(lpinfo, lptotal, myamount_nodecimal, token1_nodecimal_price=token1_nodecimal_price, token2_nodecimal_price=token2_nodecimal_price)
+
+
+def eth_getLogs(w3, _from, to, address=None, topics=["0x577a37fdb49a88d66684922c6f913df5239b4f214b2b97c53ef8e3bbb2034cb5"]):
+    print("eth_getLogs", _from, to)
+    conf = {
+        "fromBlock": hex(_from),
+        "toBlock": hex(to),
+        "topics":topics
+    }
+    if address:
+        conf['address']=w3.toChecksumAddress(address)
+    data=w3.eth.getLogs(conf)
+    return data
